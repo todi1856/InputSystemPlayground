@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class EntryPoint : MonoBehaviour
 {
-    float m_Scale = 1.0f;
     Devices m_Devices;
     // Start is called before the first frame update
     void Start()
@@ -20,8 +19,10 @@ public class EntryPoint : MonoBehaviour
 
     private void OnGUI()
     {
-        GUI.matrix = Matrix4x4.Scale(Vector3.one * m_Scale);
-        m_Scale = GUILayout.HorizontalSlider(m_Scale, 1.0f, 4.0f);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Size: " + Styles.FontSize);
+        Styles.FontSize = GUILayout.HorizontalSlider(Styles.FontSize, 11.0f, 30.0f, GUILayout.Width(600));
+        GUILayout.EndHorizontal();
         m_Devices.DoGUI();
     }
 }
