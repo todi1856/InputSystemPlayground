@@ -21,7 +21,7 @@ public class EntryPoint : MonoBehaviour
     {
         GUILayout.BeginHorizontal();
         GUILayout.Label("Size: " + Styles.FontSize);
-        Styles.FontSize = GUILayout.HorizontalSlider(Styles.FontSize, 11.0f, 30.0f, GUILayout.Width(600));
+        Styles.FontSize = GUILayout.HorizontalScrollbar(Styles.FontSize, 1, 11.0f, 60.0f, Styles.HorizontalScrollbar);
         GUILayout.EndHorizontal();
         m_Devices.DoGUI();
     }

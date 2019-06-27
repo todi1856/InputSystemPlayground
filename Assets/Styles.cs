@@ -9,7 +9,25 @@ public static class Styles
     static GUIStyle m_BoldLabel;
     static GUIStyle m_BoldButton;
     static GUIStyle m_BoldButtonSelected;
+    static GUIStyle m_HorizontalScrollbar;
     static float m_FontSize = 15;
+
+    public static GUIStyle HorizontalScrollbar
+    {
+        get
+        {
+            if (m_HorizontalScrollbar == null)
+            {
+                m_HorizontalScrollbar = new GUIStyle(GUI.skin.horizontalScrollbar);
+                m_HorizontalScrollbar.fixedHeight = 50;
+                m_HorizontalScrollbar.fixedWidth = Screen.width - 100;
+
+                // Kind a hacky, but there's now way to pass this style to GUILayout.HorizontalScrollbar ?
+                GUI.skin.horizontalScrollbarThumb.fixedHeight = 45;
+            }
+            return m_HorizontalScrollbar;
+        }
+    }
 
     public static GUIStyle BoldLabel
     {

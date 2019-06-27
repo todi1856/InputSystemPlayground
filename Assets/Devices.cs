@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 public class Devices
 {
     GenericDevice m_Device;
+    Vector2 m_DeviceScrollView;
 
     public void DoGUI()
     {
@@ -15,9 +16,11 @@ public class Devices
             return;
         }
         GUILayout.BeginHorizontal();
+        m_DeviceScrollView = GUILayout.BeginScrollView(m_DeviceScrollView, GUILayout.Height(10 * Styles.FontSize));
         foreach (var d in InputSystem.devices)
         {
-            if (GUILayout.Button(d.displayName, m_Device != null && m_Device.Device == d ? Styles.BoldButtonSelecetd : Styles.BoldButton))
+            var name = string.Format("{0} (Type = {1})", d.displayName, d.GetType().Name);
+            if (GUILayout.Button(name, m_Device != null && m_Device.Device == d ? Styles.BoldButtonSelecetd : Styles.BoldButton))
             {
                 if (m_Device != null)
                     m_Device.Dispose();
@@ -32,6 +35,13 @@ public class Devices
                     m_Device = new GenericDevice(d);
             }
         }
+
+        for (int i = 0; i < 30; i++)
+        {
+         //   GUILayout.Button("Device 1", Styles.BoldButton);
+        }
+
+        GUILayout.EndScrollView();
         GUILayout.EndHorizontal();
 
         if (m_Device != null)
