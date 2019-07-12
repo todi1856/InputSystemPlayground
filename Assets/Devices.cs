@@ -18,7 +18,25 @@ public class Devices
             GUILayout.Button("No devices", Styles.BoldButton);
             return;
         }
+        if (m_Device == null)
+        {
+            DoSelectDeviceGUI();
+        }
+        else
+        {
+            if (GUILayout.Button("Select different device", Styles.BoldButton))
+            {
+                m_Device.Dispose();
+                m_Device = null;
+            }
+            GUILayout.Space(10);
+            if (m_Device != null)
+                m_Device.DoGUI();
+        }
+    }
 
+    private void DoSelectDeviceGUI()
+    {
         GUILayout.BeginHorizontal();
         foreach (var t in m_DeviceTypes)
         {
@@ -52,16 +70,7 @@ public class Devices
                     m_Device = new GenericDevice(d);
             }
         }
-
-        for (int i = 0; i < 30; i++)
-        {
-         //   GUILayout.Button("Device 1", Styles.BoldButton);
-        }
-
         GUILayout.EndScrollView();
         GUILayout.EndHorizontal();
-
-        if (m_Device != null)
-            m_Device.DoGUI();
     }
 }
