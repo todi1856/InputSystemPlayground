@@ -30,7 +30,7 @@ public class KeyboardDevice : GenericDevice
     {
         GUILayout.BeginHorizontal();
         GUILayout.Label(string.Format("Text (Length: {0})", m_Text.Length), Styles.BoldLabel);
-        GUILayout.Label(m_Text);
+        GUILayout.Label(m_Text, Styles.BoldLabel);
         GUILayout.EndHorizontal();
     }
 }
