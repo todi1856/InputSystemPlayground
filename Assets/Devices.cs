@@ -54,7 +54,7 @@ public class Devices
             if (m_SelectedType != null && !d.GetType().IsAssignableFrom(m_SelectedType))
                 continue;
 
-            var name = string.Format("{0} (Type = {1})", d.displayName, d.GetType().Name);
+            var name = string.Format("{0} (Type = {1}, Id = {2})", d.displayName, d.GetType().Name, d.id);
             if (GUILayout.Button(name, m_Device != null && m_Device.Device == d ? Styles.BoldButtonSelecetd : Styles.BoldButton))
             {
                 if (m_Device != null)
@@ -69,6 +69,23 @@ public class Devices
                 else
                     m_Device = new GenericDevice(d);
             }
+        }
+
+        foreach (var deviceType in m_DeviceTypes)
+        {
+            if (deviceType == null || m_SelectedType != deviceType)
+                continue;
+
+            if (deviceType == typeof(Touchscreen))
+                GUILayout.Label(string.Format("TouchScreen.current = (Id = {0})", Touchscreen.current != null ? Touchscreen.current.id.ToString() : "<null>"), Styles.BoldLabel);
+            else if (deviceType == typeof(Keyboard))
+                GUILayout.Label(string.Format("Keyboard.current = (Id = {0})", Keyboard.current != null ? Keyboard.current.id.ToString() : "<null>"), Styles.BoldLabel);
+            else if(deviceType == typeof(Mouse))
+                GUILayout.Label(string.Format("Mouse.current = (Id = {0})", Mouse.current != null ? Mouse.current.id.ToString() : "<null>"), Styles.BoldLabel);
+            else if(deviceType == typeof(Sensor))
+                GUILayout.Label(string.Format("ToDo sensor"), Styles.BoldLabel);
+            else
+                GUILayout.Label(string.Format("Unhandled device type '{0}'", deviceType.GetType().FullName), Styles.BoldLabel);
         }
         GUILayout.EndScrollView();
         GUILayout.EndHorizontal();
