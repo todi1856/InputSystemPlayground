@@ -11,6 +11,12 @@ public class Devices
     readonly Type[] m_DeviceTypes = new[] { null, typeof(Touchscreen), typeof(Mouse), typeof(Keyboard), typeof(Gamepad), typeof(Sensor) };
     Type m_SelectedType;
 
+    public void DoUpdate()
+    {
+        if (m_Device != null)
+            m_Device.DoUpdate();
+    }
+
     public void DoGUI()
     {
         if (InputSystem.devices.Count == 0)

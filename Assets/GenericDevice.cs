@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using UnityEngine.InputSystem.LowLevel;
 
 public class GenericDevice : IDisposable
@@ -22,6 +23,12 @@ public class GenericDevice : IDisposable
         public string displayName;
     }
 
+    private class KeyControlData
+    {
+        internal int wasPressedThisFrameCounter;
+        internal int wasReleasedThisFrameCounter;
+    }
+
     InputDevice m_Device;
     List<InputControl> m_Controls;
     List<Type> m_ControlTypes;
@@ -32,6 +39,9 @@ public class GenericDevice : IDisposable
     private List<EventData> m_EventQueue = new List<EventData>(100);
     Vector2 m_EventScrollPosition;
     protected UIType m_UIType;
+    private Dictionary<KeyControl, KeyControlData> m_KeyControls = new Dictionary<KeyControl, KeyControlData>();
+    private Dictionary<InputControl, string> m_AdditionalInfo = new Dictionary<InputControl, string>();
+
 
     public GenericDevice(InputDevice device)
     {
@@ -71,6 +81,45 @@ public class GenericDevice : IDisposable
         GUILayout.EndHorizontal();
     }
 
+    private void GenerateAdditionalInfoKeyControl(KeyControl control)
+    {
+        KeyControlData data;
+        if (!m_KeyControls.TryGetValue(control, out data))
+        {
+            data = new KeyControlData();
+            m_KeyControls[control] = data;
+        }
+
+        if (control.wasPressedThisFrame)
+            data.wasPressedThisFrameCounter++;
+        if (control.wasReleasedThisFrame)
+            data.wasReleasedThisFrameCounter++;
+
+        m_AdditionalInfo[control] = string.Format("wasPressedThisFrame({0}), wasReleasedThisFrame({1})", data.wasPressedThisFrameCounter, data.wasReleasedThisFrameCounter);
+    }
+
+    public virtual void DoUpdate()
+    {
+        switch (m_UIType)
+        {
+            case UIType.Generic:
+                foreach (var c in m_Controls)
+                {
+                    if (c.GetType() == typeof(KeyControl))
+                        GenerateAdditionalInfoKeyControl((KeyControl)c);
+                }
+            break;
+        }
+    }
+
+    private string GetAdditionalInfo(InputControl control)
+    {
+        if (m_AdditionalInfo.ContainsKey(control))
+            return m_AdditionalInfo[control];
+
+        return "No additional info";
+    }
+
     public virtual void DoGUI()
     {
         DoToolbar();
@@ -89,7 +138,7 @@ public class GenericDevice : IDisposable
                 m_ControlScrollView = GUILayout.BeginScrollView(m_ControlScrollView);
                 foreach (var c in m_Controls)
                 {
-                    GUILayout.Button(string.Format("{0} (Type = {1}, Value = {2})", c.name, c.GetType().Name, c.ReadValueAsObject()), Styles.BoldButton);
+                    GUILayout.Button(string.Format("{0} (Type = {1}, Value = {2}, Info = ({3}) )", c.name, c.GetType().Name, c.ReadValueAsObject(), GetAdditionalInfo(c)), Styles.BoldButton);
                 }
                 GUILayout.EndScrollView();
                 break;

@@ -14,7 +14,7 @@ public class EntryPoint : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        m_Devices.DoUpdate();
     }
 
     private void OnGUI()
