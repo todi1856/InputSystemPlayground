@@ -23,7 +23,7 @@ public class GenericDevice : IDisposable
         public string displayName;
     }
 
-    private class KeyControlData
+    private class ButtonControlData
     {
         internal int wasPressedThisFrameCounter;
         internal int wasReleasedThisFrameCounter;
@@ -39,7 +39,7 @@ public class GenericDevice : IDisposable
     private List<EventData> m_EventQueue = new List<EventData>(100);
     Vector2 m_EventScrollPosition;
     protected UIType m_UIType;
-    private Dictionary<KeyControl, KeyControlData> m_KeyControls = new Dictionary<KeyControl, KeyControlData>();
+    private Dictionary<ButtonControl, ButtonControlData> m_ButtonControls = new Dictionary<ButtonControl, ButtonControlData>();
     private Dictionary<InputControl, string> m_AdditionalInfo = new Dictionary<InputControl, string>();
 
 
@@ -81,13 +81,13 @@ public class GenericDevice : IDisposable
         GUILayout.EndHorizontal();
     }
 
-    private void GenerateAdditionalInfoKeyControl(KeyControl control)
+    private void GenerateAdditionalInfoKeyControl(ButtonControl control)
     {
-        KeyControlData data;
-        if (!m_KeyControls.TryGetValue(control, out data))
+        ButtonControlData data;
+        if (!m_ButtonControls.TryGetValue(control, out data))
         {
-            data = new KeyControlData();
-            m_KeyControls[control] = data;
+            data = new ButtonControlData();
+            m_ButtonControls[control] = data;
         }
 
         if (control.wasPressedThisFrame)
@@ -105,8 +105,9 @@ public class GenericDevice : IDisposable
             case UIType.Generic:
                 foreach (var c in m_Controls)
                 {
-                    if (c.GetType() == typeof(KeyControl))
-                        GenerateAdditionalInfoKeyControl((KeyControl)c);
+                    if (c.GetType() == typeof(KeyControl) || c.GetType() == typeof(AnyKeyControl))
+                        GenerateAdditionalInfoKeyControl((ButtonControl)c);
+
                 }
             break;
         }
