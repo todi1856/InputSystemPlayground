@@ -29,6 +29,12 @@ public class GenericDevice : IDisposable
         internal int wasReleasedThisFrameCounter;
     }
 
+    private class ActionData
+    {
+        internal InputAction action;
+        internal int actionsPerformed;
+    }
+
     InputDevice m_Device;
     List<InputControl> m_Controls;
     List<Type> m_ControlTypes;
@@ -41,7 +47,7 @@ public class GenericDevice : IDisposable
     protected UIType m_UIType;
     private Dictionary<ButtonControl, ButtonControlData> m_ButtonControls = new Dictionary<ButtonControl, ButtonControlData>();
     private Dictionary<InputControl, string> m_AdditionalInfo = new Dictionary<InputControl, string>();
-
+    private Dictionary<InputControl, ActionData> m_Actions = new Dictionary<InputControl, ActionData>();
 
     public GenericDevice(InputDevice device)
     {
@@ -50,10 +56,29 @@ public class GenericDevice : IDisposable
         m_ControlTypes = m_Controls.Select(x => x.GetType()).Distinct().ToList();
         m_UIType = UIType.Specialized;
         m_CaptureDetailedEventInfo = false;
+
+        foreach (var c in m_Controls)
+        {
+            var action = new InputAction(binding:string.Format("<{0}>/{1}", device.name, c.name));
+            action.performed += Action_performed;
+            action.Enable();
+            m_Actions[c] = new ActionData() {action = action};
+        }
+    }
+
+    private void Action_performed(InputAction.CallbackContext obj)
+    {
+        m_Actions[obj.control].actionsPerformed++;
+
     }
 
     public virtual void Dispose()
     {
+        foreach (var a in m_Actions)
+        {
+            a.Value.action.Disable();
+        }
+
         StopEventTracing();
     }
 
@@ -94,8 +119,9 @@ public class GenericDevice : IDisposable
             data.wasPressedThisFrameCounter++;
         if (control.wasReleasedThisFrame)
             data.wasReleasedThisFrameCounter++;
+       
 
-        m_AdditionalInfo[control] = string.Format("wasPressedThisFrame({0}), wasReleasedThisFrame({1})", data.wasPressedThisFrameCounter, data.wasReleasedThisFrameCounter);
+        m_AdditionalInfo[control] = string.Format("wasPressedThisFrame({0}), wasReleasedThisFrame({1}), action({2})", data.wasPressedThisFrameCounter, data.wasReleasedThisFrameCounter, m_Actions[control].actionsPerformed);
     }
 
     public virtual void DoUpdate()
