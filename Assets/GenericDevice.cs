@@ -48,6 +48,7 @@ public class GenericDevice : IDisposable
     private Dictionary<ButtonControl, ButtonControlData> m_ButtonControls = new Dictionary<ButtonControl, ButtonControlData>();
     private Dictionary<InputControl, string> m_AdditionalInfo = new Dictionary<InputControl, string>();
     private Dictionary<InputControl, ActionData> m_Actions = new Dictionary<InputControl, ActionData>();
+    private InputActionMap m_ActionMap;
 
     public GenericDevice(InputDevice device)
     {
@@ -56,14 +57,16 @@ public class GenericDevice : IDisposable
         m_ControlTypes = m_Controls.Select(x => x.GetType()).Distinct().ToList();
         m_UIType = UIType.Specialized;
         m_CaptureDetailedEventInfo = false;
-
+        m_ActionMap = new InputActionMap();
+        m_ActionMap.Disable();
+        m_ActionMap.devices = new[] {device};
         foreach (var c in m_Controls)
         {
-            var action = new InputAction(binding:string.Format("<{0}>/{1}", device.name, c.name));
+            var action = m_ActionMap.AddAction(c.path, binding: c.path);
             action.performed += Action_performed;
-            action.Enable();
-            m_Actions[c] = new ActionData() {action = action};
+            m_Actions[c] = new ActionData() { action = action };
         }
+        m_ActionMap.Enable();
     }
 
     private void Action_performed(InputAction.CallbackContext obj)
@@ -74,10 +77,7 @@ public class GenericDevice : IDisposable
 
     public virtual void Dispose()
     {
-        foreach (var a in m_Actions)
-        {
-            a.Value.action.Disable();
-        }
+        m_ActionMap.Disable();
 
         StopEventTracing();
     }
