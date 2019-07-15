@@ -8,6 +8,7 @@ public static class Styles
     static List<GUIStyle> m_AllStyles = new List<GUIStyle>();
     static GUIStyle m_BoldLabel;
     static GUIStyle m_BoldButton;
+    static GUIStyle m_BoldTextField;
     static GUIStyle m_BoldButtonSelected;
     static GUIStyle m_HorizontalScrollbar;
     static float m_FontSize = 15;
@@ -56,6 +57,21 @@ public static class Styles
                 m_AllStyles.Add(m_BoldButton);
             }
             return m_BoldButton;
+        }
+    }
+
+    public static GUIStyle BoldTextField
+    {
+        get
+        {
+            if (m_BoldTextField == null)
+            {
+                m_BoldTextField = new GUIStyle(GUI.skin.textField);
+                m_BoldTextField.fontStyle = FontStyle.Bold;
+                m_BoldTextField.fontSize = (int)m_FontSize;
+                m_AllStyles.Add(m_BoldTextField);
+            }
+            return m_BoldTextField;
         }
     }
 

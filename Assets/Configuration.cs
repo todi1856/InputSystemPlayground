@@ -1,23 +1,52 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using UnityEditor;
 using UnityEngine;
 
-public class Configuration : MonoBehaviour
+public class Configuration
 {
-    public static bool OldInputEnabled
+    private static Configuration m_Instance;
+    public bool OldInputEnabled;
+
+    public bool NewInputEnabled;
+
+    public static string ConfigurationPath
     {
         get
         {
-            // TODO
-            return true;
+#if UNITY_ANDROID
+            return "jar:file://" + Application.dataPath + "!/assets/config.ini";
+#elif UNITY_IOS
+            return "Application.dataPath + "/Raw/config.ini";
+#else
+            return Path.Combine(Application.dataPath, "StreamingAssets/config.ini");
+#endif
         }
     }
 
-    public static bool NewInputEnabled
+    public static Configuration Instance
     {
         get
         {
-            return true;
+            if (m_Instance == null)
+            {
+#if UNITY_EDITOR
+                m_Instance = new Configuration();
+                PlayerSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerSettings>()[0];
+                SerializedObject playerSettingsSo = new SerializedObject(playerSettings);
+                var propNew = playerSettingsSo.FindProperty("enableNativePlatformBackendsForNewInputSystem");
+                var propOld = playerSettingsSo.FindProperty("disableOldInputManagerSupport");
+                m_Instance.NewInputEnabled = propNew.boolValue;
+                m_Instance.OldInputEnabled = propOld.boolValue == false;
+#else  
+                var contents = File.ReadAllText(ConfigurationPath, contents);
+                m_Instance = JsonUtility.FromJson<Configuration>(contents);
+#endif
+            }
+
+            return m_Instance;
         }
     }
+
 }
