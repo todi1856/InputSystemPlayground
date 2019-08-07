@@ -72,6 +72,8 @@ public class Devices
                     m_Device = new MouseDevice(d);
                 else if (d as Sensor != null)
                     m_Device = new SensorDevice(d);
+                else if (d as Gamepad != null)
+                    m_Device = new GamepadDevice(d);
                 else
                     m_Device = new GenericDevice(d);
             }
@@ -90,6 +92,8 @@ public class Devices
                 GUILayout.Label(string.Format("Mouse.current = (Id = {0})", Mouse.current != null ? Mouse.current.id.ToString() : "<null>"), Styles.BoldLabel);
             else if(deviceType == typeof(Sensor))
                 GUILayout.Label(string.Format("ToDo sensor"), Styles.BoldLabel);
+            else if (deviceType == typeof(Gamepad))
+                GUILayout.Label(string.Format("Gamepad.current = (Id = {0})", Gamepad.current != null ? Gamepad.current.id.ToString() : "<null>"), Styles.BoldLabel);
             else
                 GUILayout.Label(string.Format("Unhandled device type '{0}'", deviceType.GetType().FullName), Styles.BoldLabel);
         }
