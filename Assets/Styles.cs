@@ -11,7 +11,11 @@ public static class Styles
     static GUIStyle m_BoldTextField;
     static GUIStyle m_BoldButtonSelected;
     static GUIStyle m_HorizontalScrollbar;
+//#if UNITY_ANDROID || UNITY_IOS
+  //  static float m_FontSize = 36;
+//#else
     static float m_FontSize = 15;
+    //#endif
 
     public static GUIStyle HorizontalScrollbar
     {
@@ -22,14 +26,10 @@ public static class Styles
                 m_HorizontalScrollbar = new GUIStyle(GUI.skin.horizontalScrollbar);
                 m_HorizontalScrollbar.fixedHeight = 50;
                 m_HorizontalScrollbar.fixedWidth = Screen.width - 100;
-
-                // Kind a hacky, but there's now way to pass this style to GUILayout.HorizontalScrollbar ?
-                GUI.skin.horizontalScrollbarThumb.fixedHeight = 45;
             }
             return m_HorizontalScrollbar;
         }
     }
-
     public static GUIStyle BoldLabel
     {
         get
@@ -102,6 +102,12 @@ public static class Styles
             {
                 s.fontSize = (int)value;
             }
+
+            float scrollbarValue = value + 20;
+            GUI.skin.horizontalScrollbar.fixedHeight = scrollbarValue;
+            GUI.skin.horizontalScrollbarThumb.fixedHeight = scrollbarValue;
+            GUI.skin.verticalScrollbar.fixedWidth = scrollbarValue;
+            GUI.skin.verticalScrollbarThumb.fixedWidth = scrollbarValue;
         }
         get
         {
