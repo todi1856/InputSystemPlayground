@@ -59,6 +59,8 @@ class InputSimulation
     double m_AverageResponseMS;
     int m_TotalEvents;
 
+    bool m_UseEnchancedTouch;
+
     public State SimulationState
     {
         get
@@ -75,7 +77,10 @@ class InputSimulation
 
         for (int i = 0; i < m_Events.Length; i++)
             m_Events[i] = new EventData();
-        EnhancedTouchSupport.Enable();
+        m_UseEnchancedTouch = false;
+
+        if (m_UseEnchancedTouch)
+            EnhancedTouchSupport.Enable();
         Reset();
     }
 
@@ -106,7 +111,7 @@ class InputSimulation
         m_AverageResponseMS = 0;
         m_MinResponseMS = double.MaxValue;
         m_MaxResponseMS = double.MinValue;
-        m_TotalEvents = 0;
+        m_TotalEvents = 0; 
     }
 
     private void InjectTouchDownEvent(float x, float y)
@@ -181,14 +186,26 @@ class InputSimulation
         }
     }
 
+    private bool WaitForTouchExpire()
+    {
+        if (Configuration.Instance.OldInputEnabled)
+            return true;
+        return m_UseEnchancedTouch;
+    }
+
     private int GetInputEventIdx()
     {
         int touchCount;
         if (Configuration.Instance.OldInputEnabled)
             touchCount = Input.touchCount;
         else
-            // touchCount = Touchscreen.current.touches.Count; UnityEngine.InputSystem.EnhancedTouch
-            touchCount = Touch.activeTouches.Count;
+        {
+            if (m_UseEnchancedTouch)
+                touchCount = Touch.activeTouches.Count;
+            else
+                touchCount = Touchscreen.current.touches.Count;
+
+        }
         for (int i = 0; i < touchCount; i++)
         {
             int idx;
@@ -200,11 +217,17 @@ class InputSimulation
             }
             else
             {
-                // var touch = Touchscreen.current.touches[i];
-               // idx = (int)touch.position.ReadValue().y;
-                var touch = Touch.activeTouches[i];
-                idx = (int)touch.screenPosition.y;
-                
+
+                if (m_UseEnchancedTouch)
+                {
+                    var touch = Touch.activeTouches[i];
+                    idx = (int)touch.screenPosition.y;
+                }
+                else
+                {
+                    var touch = Touchscreen.current.touches[i];
+                    idx = (int)touch.position.ReadValue().y;
+                }
             }
 
             if (idx < 0 || idx > m_Events.Length - 1)
@@ -221,45 +244,45 @@ class InputSimulation
 
     public void Update()
     {
-        switch(m_State)
+        if (m_State == State.WaitingForEvent)
         {
-            case State.WaitingForEvent:
+            var idx = GetInputEventIdx();
+            if (idx == m_ExpectedEventIdx)
+            {
+                try
                 {
-                    var idx = GetInputEventIdx();
-                    if (idx >= 0)
+                    ReceivedEvent(idx);
+                    ValidateEvents();
+                    m_NextEventIdx = idx + 1;
+                    // We're done
+                    if (m_NextEventIdx == m_Events.Length)
+                        m_State = State.Idle;
+                    else
                     {
-                        try
-                        {
-                            ReceivedEvent(idx);
-                            ValidateEvents();
-                            m_NextEventIdx = idx + 1;
-                            // We're done
-                            if (m_NextEventIdx == m_Events.Length)
-                                m_State = State.Idle;
-                            else
-                                m_State = State.WaitingForEventExpire;
-                        }
-                        catch
-                        {
-                            m_State = State.Idle;
-                            throw;
-                        }
+                        if (WaitForTouchExpire())
+                            m_State = State.WaitingForEventExpire;
+                        else
+                            QueueEvent(m_NextEventIdx);
                     }
                 }
-                break;
-            case State.WaitingForEventExpire:
+                catch
                 {
-                    var idx = GetInputEventIdx();
-                    if (idx == -1)
-                    {
-                        QueueEvent(m_NextEventIdx);
-                    }
+                    m_State = State.Idle;
+                    throw;
                 }
-                break;
-            case State.Idle:
-            default:
-                break;
-        } 
+            }
+        }
+
+        // Don't else if here, since if there was a state switch, we want to handle it immediately
+        if (m_State == State.WaitingForEventExpire)
+        {
+            var idx = GetInputEventIdx();
+            if (idx == -1)
+            {
+                QueueEvent(m_NextEventIdx);
+            }
+        }
+
     }
 
     public int GetTotalEvents()
@@ -277,9 +300,11 @@ class InputSimulation
     public void QueueEvents()
     {
         if (m_State != State.Idle)
-            throw new Exception("Still queing");
+        {
+            // Give time for previous events to come
+            Thread.Sleep(500);
+        }
         Reset();
-
         QueueEvent(0);
     }
 }
