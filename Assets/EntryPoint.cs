@@ -5,6 +5,7 @@ using UnityEngine;
 public class EntryPoint : MonoBehaviour
 {
     Devices m_Devices;
+
     // Start is called before the first frame update
     void Start()
     {

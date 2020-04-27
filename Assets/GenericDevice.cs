@@ -158,7 +158,7 @@ public class GenericDevice : IDisposable
                 InputSystem.EnableDevice(m_Device);
         }
 
-        GUILayout.Label(string.Format("{0} (Type = {1}, Id = {2}, Controls = {3})", m_Device.displayName, m_Device.GetType().Name, m_Device.id, m_Controls.Count), Styles.BoldLabel);
+        GUILayout.Label(string.Format("{0} (Type = {1}, Id = {2}, Controls = {3})", m_Device.displayName, m_Device.GetType().Name, m_Device.deviceId, m_Controls.Count), Styles.BoldLabel);
         switch (m_UIType)
         {
             case UIType.Generic:
@@ -189,7 +189,7 @@ public class GenericDevice : IDisposable
             m_EventTrace.Dispose();
         m_EventCount = 0;
         m_EventQueue.Clear();
-        m_EventTrace = new InputEventTrace() { deviceId = m_Device.id };
+        m_EventTrace = new InputEventTrace() { deviceId = m_Device.deviceId };
         m_EventTrace.onEvent += M_EventTrace_onEvent; ;
         m_EventTrace.Enable();
     }

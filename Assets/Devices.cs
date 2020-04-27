@@ -81,7 +81,7 @@ public class Devices
             if (m_SelectedType != null && !m_SelectedType.IsAssignableFrom(d.GetType()))
                 continue;
 
-            var name = string.Format("{0} (Type = {1}, Id = {2})", d.displayName, d.GetType().Name, d.id);
+            var name = string.Format("{0} (Type = {1}, Id = {2})", d.displayName, d.GetType().Name, d.deviceId);
             if (GUILayout.Button(name, m_Device != null && m_Device.Device == d ? Styles.BoldButtonSelecetd : Styles.BoldButton))
             {
                 if (m_Device != null)
@@ -107,19 +107,35 @@ public class Devices
                 continue;
 
             if (deviceType == typeof(Touchscreen))
-                GUILayout.Label(string.Format("TouchScreen.current = (Id = {0})", Touchscreen.current != null ? Touchscreen.current.id.ToString() : "<null>"), Styles.BoldLabel);
+                GUILayout.Label(string.Format("TouchScreen.current = (Id = {0})", Touchscreen.current != null ? Touchscreen.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
             else if (deviceType == typeof(Keyboard))
-                GUILayout.Label(string.Format("Keyboard.current = (Id = {0})", Keyboard.current != null ? Keyboard.current.id.ToString() : "<null>"), Styles.BoldLabel);
-            else if(deviceType == typeof(Mouse))
-                GUILayout.Label(string.Format("Mouse.current = (Id = {0})", Mouse.current != null ? Mouse.current.id.ToString() : "<null>"), Styles.BoldLabel);
-            else if(deviceType == typeof(Sensor))
-                GUILayout.Label(string.Format("ToDo sensor"), Styles.BoldLabel);
+                GUILayout.Label(string.Format("Keyboard.current = (Id = {0})", Keyboard.current != null ? Keyboard.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+            else if (deviceType == typeof(Mouse))
+                GUILayout.Label(string.Format("Mouse.current = (Id = {0})", Mouse.current != null ? Mouse.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+            else if (deviceType == typeof(Sensor))
+                DoSensors();
             else if (deviceType == typeof(Gamepad))
-                GUILayout.Label(string.Format("Gamepad.current = (Id = {0})", Gamepad.current != null ? Gamepad.current.id.ToString() : "<null>"), Styles.BoldLabel);
+                GUILayout.Label(string.Format("Gamepad.current = (Id = {0})", Gamepad.current != null ? Gamepad.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
             else
                 GUILayout.Label(string.Format("Unhandled device type '{0}'", deviceType.GetType().FullName), Styles.BoldLabel);
         }
         GUILayout.EndScrollView();
         GUILayout.EndHorizontal();
+    }
+
+    private void DoSensors()
+    {
+        GUILayout.Label(string.Format("Accelerometer.current = (Id = {0})", Accelerometer.current != null ? Accelerometer.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+        GUILayout.Label(string.Format("LightSensor.current = (Id = {0})", LightSensor.current != null ? LightSensor.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+        GUILayout.Label(string.Format("StepCounter.current = (Id = {0})", StepCounter.current != null ? StepCounter.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+        GUILayout.Label(string.Format("Gyroscope.current = (Id = {0})", UnityEngine.InputSystem.Gyroscope.current != null ? UnityEngine.InputSystem.Gyroscope.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+        GUILayout.Label(string.Format("GravitySensor.current = (Id = {0})", GravitySensor.current != null ? GravitySensor.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+        GUILayout.Label(string.Format("AttitudeSensor.current = (Id = {0})", AttitudeSensor.current != null ? AttitudeSensor.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+        GUILayout.Label(string.Format("LinearAccelerationSensor.current = (Id = {0})", LinearAccelerationSensor.current != null ? LinearAccelerationSensor.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+        GUILayout.Label(string.Format("MagneticFieldSensor.current = (Id = {0})", MagneticFieldSensor.current != null ? MagneticFieldSensor.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+        GUILayout.Label(string.Format("PressureSensor.current = (Id = {0})", PressureSensor.current != null ? PressureSensor.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+        GUILayout.Label(string.Format("ProximitySensor.current = (Id = {0})", ProximitySensor.current != null ? ProximitySensor.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+        GUILayout.Label(string.Format("HumiditySensor.current = (Id = {0})", HumiditySensor.current != null ? HumiditySensor.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+        GUILayout.Label(string.Format("AmbientTemperatureSensor.current = (Id = {0})", AmbientTemperatureSensor.current != null ? AmbientTemperatureSensor.current.deviceId.ToString() : "<null>"), Styles.BoldLabel); 
     }
 }

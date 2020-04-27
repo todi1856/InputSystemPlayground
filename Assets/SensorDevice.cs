@@ -12,4 +12,20 @@ public class SensorDevice : GenericDevice
     {
 
     }
+
+    protected override void DoSpecializedGUI()
+    {
+        DoLightSensor();
+    }
+
+    private void DoLightSensor()
+    {
+        var lightSensor = Device as LightSensor;
+
+        if (lightSensor == null)
+            return;
+
+        GUILayout.Label("LightLevel: " + lightSensor.lightLevel.ReadValueAsObject(), Styles.BoldLabel);
+    }
+
 }
