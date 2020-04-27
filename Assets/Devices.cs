@@ -15,6 +15,7 @@ public class Devices
 
     public void DoUpdate()
     {
+        
         if (m_Device != null)
             m_Device.DoUpdate();
     }
@@ -46,7 +47,7 @@ public class Devices
     private void DoSettings()
     {
         var s = InputSystem.settings;
-        GUILayout.Label("TimesliceEvents: " + s.timesliceEvents.ToString(), Styles.BoldLabel);
+        //GUILayout.Label("TimesliceEvents: " + s.timesliceEvents.ToString(), Styles.BoldLabel);
         GUILayout.Label("UpdateMode: " + s.updateMode.ToString(), Styles.BoldLabel);
         GUILayout.Label("CompensateForScreenOrientation: " + s.compensateForScreenOrientation.ToString(), Styles.BoldLabel);
         GUILayout.Label("FilterNoiseOnCurrent: " + s.filterNoiseOnCurrent.ToString(), Styles.BoldLabel);
@@ -91,6 +92,8 @@ public class Devices
                     m_Device = new KeyboardDevice(d);
                 else if (d as Mouse != null)
                     m_Device = new MouseDevice(d);
+                else if (d as Touchscreen != null)
+                    m_Device = new TouchscreenDevice(d);
                 else if (d as Sensor != null)
                     m_Device = new SensorDevice(d);
                 else if (d as Gamepad != null)

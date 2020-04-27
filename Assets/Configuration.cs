@@ -2,8 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class Configuration
 {
@@ -42,12 +44,19 @@ public class Configuration
                 var propOld = playerSettingsSo.FindProperty("disableOldInputManagerSupport");
                 m_Instance.NewInputEnabled = propNew.boolValue;
                 m_Instance.OldInputEnabled = propOld.boolValue == false;
-#else  
-                if (File.Exists(ConfigurationPath) == false)
-                    throw new Exception("Config not found: " + ConfigurationPath);
-                var contents = File.ReadAllText(ConfigurationPath);
+
+#else
+                var uwr = UnityWebRequest.Get(ConfigurationPath);
+                uwr.SendWebRequest();
+                while (!uwr.isDone && !uwr.isNetworkError && !uwr.isHttpError)
+                {
+                    Debug.Log("Downloading");
+                    Thread.Sleep(10);
+                }
+                var contents = uwr.downloadHandler.text;
                 m_Instance = JsonUtility.FromJson<Configuration>(contents);
 #endif
+
             }
 
             return m_Instance;
