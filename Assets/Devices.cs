@@ -11,6 +11,8 @@ public class Devices
     readonly Type[] m_DeviceTypes = new[] { null, typeof(Touchscreen), typeof(Mouse), typeof(Keyboard), typeof(Gamepad), typeof(Sensor) };
     Type m_SelectedType;
 
+    bool m_ShowSettings;
+
     public void DoUpdate()
     {
         if (m_Device != null)
@@ -41,9 +43,21 @@ public class Devices
         }
     }
 
+    private void DoSettings()
+    {
+        var s = InputSystem.settings;
+        GUILayout.Label("TimesliceEvents: " + s.timesliceEvents.ToString(), Styles.BoldLabel);
+        GUILayout.Label("UpdateMode: " + s.updateMode.ToString(), Styles.BoldLabel);
+        GUILayout.Label("CompensateForScreenOrientation: " + s.compensateForScreenOrientation.ToString(), Styles.BoldLabel);
+        GUILayout.Label("FilterNoiseOnCurrent: " + s.filterNoiseOnCurrent.ToString(), Styles.BoldLabel);
+    }
+
     private void DoSelectDeviceGUI()
     {
         GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Settings", m_ShowSettings ? Styles.BoldButtonSelecetd : Styles.BoldButton))
+            m_ShowSettings = !m_ShowSettings;
+
         foreach (var t in m_DeviceTypes)
         {
             if (GUILayout.Button(t == null ? "All" : t.Name, m_SelectedType == t ? Styles.BoldButtonSelecetd : Styles.BoldButton))
@@ -53,11 +67,18 @@ public class Devices
         }
         GUILayout.EndHorizontal();
 
+
+        if (m_ShowSettings)
+        {
+            DoSettings();
+            return;
+        }
+
         GUILayout.BeginHorizontal();
         m_DeviceScrollView = GUILayout.BeginScrollView(m_DeviceScrollView, GUILayout.Height(10 * Styles.FontSize));
         foreach (var d in InputSystem.devices)
         {
-            if (m_SelectedType != null && !d.GetType().IsAssignableFrom(m_SelectedType))
+            if (m_SelectedType != null && !m_SelectedType.IsAssignableFrom(d.GetType()))
                 continue;
 
             var name = string.Format("{0} (Type = {1}, Id = {2})", d.displayName, d.GetType().Name, d.id);
@@ -77,6 +98,7 @@ public class Devices
                 else
                     m_Device = new GenericDevice(d);
             }
+
         }
 
         foreach (var deviceType in m_DeviceTypes)

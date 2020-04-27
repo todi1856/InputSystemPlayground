@@ -11,7 +11,11 @@ public static class Styles
     static GUIStyle m_BoldTextField;
     static GUIStyle m_BoldButtonSelected;
     static GUIStyle m_HorizontalScrollbar;
+#if !UNITY_EDITOR && (PLATFORM_ANDROID || PLATFORM_IOS)
+    static float m_FontSize = 60;
+#else
     static float m_FontSize = 15;
+#endif
 
     public static GUIStyle HorizontalScrollbar
     {
@@ -25,6 +29,7 @@ public static class Styles
 
                 // Kind a hacky, but there's now way to pass this style to GUILayout.HorizontalScrollbar ?
                 GUI.skin.horizontalScrollbarThumb.fixedHeight = 45;
+                GUI.skin.verticalScrollbarThumb.fixedWidth = 45;
             }
             return m_HorizontalScrollbar;
         }
