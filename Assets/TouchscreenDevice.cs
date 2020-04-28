@@ -2,12 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class TouchscreenDevice : GenericDevice
 {
     DateTime? m_InjectTime;
+    int m_ReceiveType;
     AndroidJavaObject m_JavaClass;
 
     InputSimulation m_InputSimulation;
@@ -35,6 +37,20 @@ public class TouchscreenDevice : GenericDevice
         {
             m_InjectTime = DateTime.Now.AddSeconds(4);
         }
+
+        InputSimulation.EventReceiveType[] values;
+        values = Configuration.Instance.OldInputEnabled ?
+            new[] { InputSimulation.EventReceiveType.OldInput } :
+            new[] {
+                InputSimulation.EventReceiveType.NewInputViaUpdateTouchScreen,
+                InputSimulation.EventReceiveType.NewInputViaUpdateEnchancedTouchScreen,
+                InputSimulation.EventReceiveType.NewInputViaCallbacks,
+            };
+
+
+
+        m_ReceiveType = GUILayout.Toolbar(m_ReceiveType, values.Select(m => new GUIContent(m.ToString())).ToArray());
+        m_InputSimulation.ReceiveType = values[m_ReceiveType];
 
         if (m_InjectTime != null && m_InjectTime > DateTime.Now)
         {

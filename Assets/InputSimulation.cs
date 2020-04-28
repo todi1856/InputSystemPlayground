@@ -4,10 +4,18 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
-
+using UnityEngine.InputSystem.LowLevel;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 class InputSimulation
 {
+    public enum EventReceiveType
+    {
+        OldInput,
+        NewInputViaUpdateTouchScreen,
+        NewInputViaUpdateEnchancedTouchScreen,
+        NewInputViaCallbacks
+    }
+
     public enum State
     {
         Idle,
@@ -17,14 +25,14 @@ class InputSimulation
 
     class EventData
     {
-        public DateTime? injectStartTime;
-        public DateTime? injectEndTime;
+        public long? injectStartTime;
+        public long? injectEndTime;
 
-        public double GetMS()
+        public long GetMS()
         {
             if (injectEndTime != null && injectStartTime != null)
             {
-                return ((TimeSpan)(injectEndTime - injectStartTime)).TotalMilliseconds;
+                return (long)(injectEndTime - injectStartTime);
             }
 
             return 0;
@@ -52,6 +60,7 @@ class InputSimulation
     AndroidJavaObject m_JavaClass;
     EventData[] m_Events = new EventData[kMaxInputEvents];
     State m_State;
+    EventReceiveType m_EventReceiveType;
     int m_ExpectedEventIdx;
     int m_NextEventIdx;
     double m_MinResponseMS;
@@ -59,13 +68,26 @@ class InputSimulation
     double m_AverageResponseMS;
     int m_TotalEvents;
 
-    bool m_UseEnchancedTouch;
-
     public State SimulationState
     {
         get
         {
             return m_State;
+        }
+    }
+
+    public EventReceiveType ReceiveType
+    {
+        set
+        {
+            if (m_EventReceiveType == value)
+                return;
+            m_EventReceiveType = value;
+            Reset();
+        }
+        get
+        {
+            return m_EventReceiveType;
         }
     }
 
@@ -77,16 +99,38 @@ class InputSimulation
 
         for (int i = 0; i < m_Events.Length; i++)
             m_Events[i] = new EventData();
-        m_UseEnchancedTouch = false;
 
-        if (m_UseEnchancedTouch)
-            EnhancedTouchSupport.Enable();
+        if (Configuration.Instance.OldInputEnabled)
+            m_EventReceiveType = EventReceiveType.OldInput;
+        else
+            m_EventReceiveType = EventReceiveType.NewInputViaCallbacks;
+
         Reset();
+    }
+
+    private unsafe void InputSystem_onEvent(UnityEngine.InputSystem.LowLevel.InputEventPtr eventPtr, InputDevice device)
+    {
+        if (m_State == State.Idle || m_EventReceiveType != EventReceiveType.NewInputViaCallbacks)
+            return;
+
+        var touchScreenDevice = device as Touchscreen;
+        if (touchScreenDevice == null)
+            return;
+
+        if (!eventPtr.IsA<StateEvent>())
+            return;
+        var stateEvent = StateEvent.From(eventPtr);
+        if (stateEvent->stateFormat != TouchState.Format)
+            return;
+        var touchState = (TouchState*)stateEvent->state;
+
+        if (touchState->phase == UnityEngine.InputSystem.TouchPhase.Began)
+            HandleEventReceive((int)touchState->position.y);
     }
 
     public double AverageResponseMS
     {
-        get => m_TotalEvents == 0? 0 : m_AverageResponseMS;
+        get => m_TotalEvents == 0 ? 0 : m_AverageResponseMS;
     }
 
     public double MinResponseMS
@@ -111,7 +155,21 @@ class InputSimulation
         m_AverageResponseMS = 0;
         m_MinResponseMS = double.MaxValue;
         m_MaxResponseMS = double.MinValue;
-        m_TotalEvents = 0; 
+        m_TotalEvents = 0;
+
+        EnhancedTouchSupport.Disable();
+        InputSystem.onEvent -= InputSystem_onEvent;
+
+        switch (m_EventReceiveType)
+        {
+            case EventReceiveType.NewInputViaUpdateEnchancedTouchScreen:
+                EnhancedTouchSupport.Enable();
+                break;
+            case EventReceiveType.NewInputViaCallbacks:
+                InputSystem.onEvent += InputSystem_onEvent;
+                break;
+        }
+
     }
 
     private void InjectTouchDownEvent(float x, float y)
@@ -124,10 +182,20 @@ class InputSimulation
         m_JavaClass.CallStatic("injectTouchUpEvent", x, Screen.height - y);
     }
 
+    private long GetLastReceivedEventTime()
+    {
+        return m_JavaClass.CallStatic<long>("GetLastTouchEventTime");
+    }
+
+    private long GetTimeMS()
+    {
+        return m_JavaClass.CallStatic<long>("getTimeMS");
+    }
+
     private void QueueEvent(int index)
     {
         m_ExpectedEventIdx = index;
-        m_Events[index].injectStartTime = DateTime.Now;
+        m_Events[index].injectStartTime = GetTimeMS();
         // Add 0.1f due rounding problems
         InjectTouchDownEvent(2, index + 0.1f);
         InjectTouchUpEvent(2, index + 0.1f);
@@ -147,7 +215,10 @@ class InputSimulation
         {
             throw new Exception($"Input event {index} already received an event");
         }
-        e.injectEndTime = DateTime.Now;
+
+
+        e.injectStartTime = GetLastReceivedEventTime();
+        e.injectEndTime = GetTimeMS();
 
         m_TotalEvents = 0;
         double totalMs = 0;
@@ -188,88 +259,107 @@ class InputSimulation
 
     private bool WaitForTouchExpire()
     {
-        if (Configuration.Instance.OldInputEnabled)
-            return true;
-        return m_UseEnchancedTouch;
+        return m_EventReceiveType == EventReceiveType.OldInput || m_EventReceiveType == EventReceiveType.NewInputViaUpdateEnchancedTouchScreen;
     }
+
+    private int GetInputEventIdxViaOldInput()
+    {
+        if (!Configuration.Instance.OldInputEnabled)
+            return -1;
+        if (Input.touchCount == 0)
+            return -1;
+
+        var touch = Input.GetTouch(0);
+        return (int)touch.position.y;
+ 
+    }
+
+    private int GetInputEventIdxViaNewInputTouchScreen()
+    {
+        if (!Configuration.Instance.NewInputEnabled)
+            return -1;
+        if (Touchscreen.current.touches.Count == 0)
+            return -1;
+        var touch = Touchscreen.current.touches[0];
+        var idx = (int)touch.position.ReadValue().y;
+        // TouchScreen doesn't clear data, actually it can hold garbage data, not sure why, that's why we have this check below
+        if (idx != m_ExpectedEventIdx)
+            return -1;
+        return idx;
+    }
+
+    private int GetInputEventIdxViaNewInputEnchancedTouch()
+    {
+        if (!Configuration.Instance.NewInputEnabled)
+            return -1;
+        if (Touch.activeTouches.Count == 0)
+            return -1;
+
+        var touch = Touch.activeTouches[0];
+        return (int)touch.screenPosition.y;
+    }
+
 
     private int GetInputEventIdx()
     {
-        int touchCount;
-        if (Configuration.Instance.OldInputEnabled)
-            touchCount = Input.touchCount;
-        else
+        int idx = -1;
+        switch (m_EventReceiveType)
         {
-            if (m_UseEnchancedTouch)
-                touchCount = Touch.activeTouches.Count;
-            else
-                touchCount = Touchscreen.current.touches.Count;
-
+            case EventReceiveType.OldInput:
+                idx = GetInputEventIdxViaOldInput();
+                break;
+            case EventReceiveType.NewInputViaUpdateTouchScreen:
+                idx = GetInputEventIdxViaNewInputTouchScreen();
+                break;
+            case EventReceiveType.NewInputViaUpdateEnchancedTouchScreen:
+                idx = GetInputEventIdxViaNewInputEnchancedTouch();
+                break;
         }
-        for (int i = 0; i < touchCount; i++)
+        
+        // Note: -1 is valid
+        if (idx < -1 || idx > m_Events.Length - 1)
         {
-            int idx;
-            if (Configuration.Instance.OldInputEnabled)
-            {
-                var touch = Input.GetTouch(i);
-                idx = (int)touch.position.y;
-
-            }
-            else
-            {
-
-                if (m_UseEnchancedTouch)
-                {
-                    var touch = Touch.activeTouches[i];
-                    idx = (int)touch.screenPosition.y;
-                }
-                else
-                {
-                    var touch = Touchscreen.current.touches[i];
-                    idx = (int)touch.position.ReadValue().y;
-                }
-            }
-
-            if (idx < 0 || idx > m_Events.Length - 1)
-            {
-                Debug.LogError($"Bad idx {idx}");
-                continue;
-            }
-            return idx;
+            Debug.LogError($"Bad idx {idx}");
         }
-
-        return -1;
+        return idx;
     }
 
+    private void HandleEventReceive(int idx)
+    {
+        try
+        {
+            ReceivedEvent(idx);
+            ValidateEvents();
+            m_NextEventIdx = idx + 1;
+            // We're done
+            if (m_NextEventIdx == m_Events.Length)
+                m_State = State.Idle;
+            else
+            {
+                if (WaitForTouchExpire())
+                    m_State = State.WaitingForEventExpire;
+                else
+                    QueueEvent(m_NextEventIdx);
+            }
+        }
+        catch
+        {
+            m_State = State.Idle;
+            throw;
+        }
+    }
 
     public void Update()
     {
+        if (m_EventReceiveType == EventReceiveType.NewInputViaCallbacks)
+            return;
+
         if (m_State == State.WaitingForEvent)
         {
             var idx = GetInputEventIdx();
             if (idx == m_ExpectedEventIdx)
             {
-                try
-                {
-                    ReceivedEvent(idx);
-                    ValidateEvents();
-                    m_NextEventIdx = idx + 1;
-                    // We're done
-                    if (m_NextEventIdx == m_Events.Length)
-                        m_State = State.Idle;
-                    else
-                    {
-                        if (WaitForTouchExpire())
-                            m_State = State.WaitingForEventExpire;
-                        else
-                            QueueEvent(m_NextEventIdx);
-                    }
-                }
-                catch
-                {
-                    m_State = State.Idle;
-                    throw;
-                }
+                HandleEventReceive(idx);
             }
         }
 
@@ -282,7 +372,6 @@ class InputSimulation
                 QueueEvent(m_NextEventIdx);
             }
         }
-
     }
 
     public int GetTotalEvents()
