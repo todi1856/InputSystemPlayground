@@ -40,10 +40,17 @@ public class Configuration
                 m_Instance = new Configuration();
                 PlayerSettings playerSettings = Resources.FindObjectsOfTypeAll<PlayerSettings>()[0];
                 SerializedObject playerSettingsSo = new SerializedObject(playerSettings);
+#if UNITY_2020_2_OR_NEWER
+                var activeInputHandler = playerSettingsSo.FindProperty("activeInputHandler").intValue;
+                m_Instance.NewInputEnabled = activeInputHandler == 1 || activeInputHandler == 2;
+                m_Instance.OldInputEnabled = activeInputHandler == 0 || activeInputHandler == 2; ;
+
+#else
                 var propNew = playerSettingsSo.FindProperty("enableNativePlatformBackendsForNewInputSystem");
                 var propOld = playerSettingsSo.FindProperty("disableOldInputManagerSupport");
                 m_Instance.NewInputEnabled = propNew.boolValue;
                 m_Instance.OldInputEnabled = propOld.boolValue == false;
+#endif
 
 #else
                 var uwr = UnityWebRequest.Get(ConfigurationPath);
