@@ -3,8 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
-public class Devices
+public partial class Devices
 {
     GenericDevice m_Device;
     Vector2 m_DeviceScrollView;
@@ -13,11 +15,24 @@ public class Devices
 
     bool m_ShowSettings;
 
+    public Devices()
+    {
+        EnhancedTouchSupport.Enable();
+    }
+
     public void DoUpdate()
     {
-        
         if (m_Device != null)
             m_Device.DoUpdate();
+
+        foreach (var deviceType in m_DeviceTypes)
+        {
+            if (deviceType == null || m_SelectedType != deviceType)
+                continue;
+
+            if (deviceType == typeof(Touchscreen))
+                DoGenericTouchScreenUpdate();
+        }
     }
 
     public void DoGUI()
@@ -110,7 +125,7 @@ public class Devices
                 continue;
 
             if (deviceType == typeof(Touchscreen))
-                GUILayout.Label(string.Format("TouchScreen.current = (Id = {0})", Touchscreen.current != null ? Touchscreen.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
+                DoGenericTouchScreenGUI();
             else if (deviceType == typeof(Keyboard))
                 GUILayout.Label(string.Format("Keyboard.current = (Id = {0})", Keyboard.current != null ? Keyboard.current.deviceId.ToString() : "<null>"), Styles.BoldLabel);
             else if (deviceType == typeof(Mouse))
