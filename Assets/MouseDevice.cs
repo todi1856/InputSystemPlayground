@@ -12,4 +12,24 @@ public class MouseDevice : GenericDevice
     {
 
     }
+
+    void ToggleCursorLockState()
+    {
+        if (Cursor.lockState == CursorLockMode.None) Cursor.lockState = CursorLockMode.Confined;
+        else if (Cursor.lockState == CursorLockMode.Confined) Cursor.lockState = CursorLockMode.Locked;
+        else if (Cursor.lockState == CursorLockMode.Locked) Cursor.lockState = CursorLockMode.None;
+    }
+
+    public override void DoUpdate()
+    {
+        base.DoUpdate();
+        if (Keyboard.current.aKey.wasPressedThisFrame)
+            ToggleCursorLockState();
+    }
+
+    protected override void DoSpecializedGUI()
+    {
+        if (GUILayout.Button($"Cursor LockState {Cursor.lockState}"))
+            ToggleCursorLockState();
+    }
 }

@@ -51,6 +51,11 @@ public partial class Devices
                 continue;
             GUILayout.Label($"{p} - {m_PhaseStats.Phase[p]}");
         }
+
+        foreach (var t in Touch.activeTouches)
+        {
+            GUILayout.Label($"{t.touchId} - {t.screenPosition}");
+        }
     }
 
 }
