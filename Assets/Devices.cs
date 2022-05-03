@@ -86,6 +86,39 @@ public partial class Devices
         GUILayout.Label("FilterNoiseOnCurrent: " + s.filterNoiseOnCurrent.ToString(), Styles.BoldLabel);
     }
 
+    private IReadOnlyList<InputDevice> GetDevices(Type filterByType = null)
+    {
+        var devices = new List<InputDevice>();
+        foreach (var d in InputSystem.devices)
+        {
+            if (filterByType != null && !filterByType.IsAssignableFrom(d.GetType()))
+                continue;
+            devices.Add(d);
+        }
+        return devices;
+    }
+
+    private void SelectDevice(InputDevice d)
+    {
+        if (m_Device != null)
+            m_Device.Dispose();
+
+        if (d as Keyboard != null)
+            m_Device = new KeyboardDevice(d);
+        else if (d as Mouse != null)
+            m_Device = new MouseDevice(d);
+        else if (d as Touchscreen != null)
+            m_Device = new TouchscreenDevice(d);
+        else if (d as Sensor != null)
+            m_Device = new SensorDevice(d);
+        else if (d as Gamepad != null)
+            m_Device = new GamepadDevice(d);
+        else if (d as Pen != null)
+            m_Device = new PenDevice(d);
+        else
+            m_Device = new GenericDevice(d);
+    }
+
     private void DoSelectDeviceGUI()
     {
         GUILayout.BeginHorizontal();
@@ -97,6 +130,10 @@ public partial class Devices
             if (GUILayout.Button(t == null ? "All" : t.Name, m_SelectedType == t ? Styles.BoldButtonSelecetd : Styles.BoldButton))
             {
                 m_SelectedType = t;
+                // Automatically select a device, if there was only one of them
+                var devices = GetDevices(t);
+                if (devices.Count == 1)
+                    SelectDevice(devices[0]);
             }
         }
         GUILayout.EndHorizontal();
@@ -110,31 +147,13 @@ public partial class Devices
 
         GUILayout.BeginHorizontal();
         m_DeviceScrollView = GUILayout.BeginScrollView(m_DeviceScrollView, GUILayout.Height(10 * Styles.FontSize));
-        foreach (var d in InputSystem.devices)
-        {
-            if (m_SelectedType != null && !m_SelectedType.IsAssignableFrom(d.GetType()))
-                continue;
 
+        foreach (var d in GetDevices(m_SelectedType))
+        {
             var name = string.Format("{0} (Type = {1}, Id = {2}, Enabled = {3})", d.displayName, d.GetType().Name, d.deviceId, d.enabled);
             if (GUILayout.Button(name, m_Device != null && m_Device.Device == d ? Styles.BoldButtonSelecetd : Styles.BoldButton))
             {
-                if (m_Device != null)
-                    m_Device.Dispose();
-
-                if (d as Keyboard != null)
-                    m_Device = new KeyboardDevice(d);
-                else if (d as Mouse != null)
-                    m_Device = new MouseDevice(d);
-                else if (d as Touchscreen != null)
-                    m_Device = new TouchscreenDevice(d);
-                else if (d as Sensor != null)
-                    m_Device = new SensorDevice(d);
-                else if (d as Gamepad != null)
-                    m_Device = new GamepadDevice(d);
-                else if (d as Pen != null)
-                    m_Device = new PenDevice(d);
-                else
-                    m_Device = new GenericDevice(d);
+                SelectDevice(d);
             }
         }
 
