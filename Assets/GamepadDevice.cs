@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.DualShock;
 
 public class GamepadDevice : GenericDevice
 {
@@ -22,5 +23,15 @@ public class GamepadDevice : GenericDevice
         GUILayout.Label($"Trigger L: {g.leftTrigger.ReadValue()}, R: {g.rightTrigger.ReadValue()}");
         GUILayout.Label($"Shoulder L: {g.leftShoulder.ReadValue()}, R: {g.rightShoulder.ReadValue()}");
         GUILayout.Label($"Start: {g.startButton.ReadValue()}, Select: {g.selectButton.ReadValue()}");
+
+        var d = g as DualShockGamepad;
+        if (d != null)
+        {
+            GUILayout.Label($"Touchpad: {d.touchpadButton.ReadValue()}");
+        }
+        else
+        {
+            GUILayout.Label($"Touchpad: <No Touchpad>");
+        }
     }
 }
