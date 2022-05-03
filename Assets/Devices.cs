@@ -12,7 +12,7 @@ public partial class Devices
     Vector2 m_DeviceScrollView;
     readonly Type[] m_DeviceTypes = new[] { null, typeof(Touchscreen), typeof(Mouse), typeof(Keyboard), typeof(Pen), typeof(Gamepad), typeof(Sensor) };
     Type m_SelectedType;
-
+    int m_SelectedTypeIdx;
     bool m_ShowSettings;
 
     public Devices()
@@ -42,9 +42,11 @@ public partial class Devices
             GUILayout.Button("No devices", Styles.BoldButton);
             return;
         }
+
+        DoSelectDeviceGUI();
         if (m_Device == null)
         {
-            DoSelectDeviceGUI();
+            DoInfoWhenDeviceIsNotSelected();
         }
         else
         {
@@ -125,20 +127,27 @@ public partial class Devices
         if (GUILayout.Button("Settings", m_ShowSettings ? Styles.BoldButtonSelecetd : Styles.BoldButton))
             m_ShowSettings = !m_ShowSettings;
 
-        foreach (var t in m_DeviceTypes)
+
+        var t = m_DeviceTypes[m_SelectedTypeIdx];
+        if (GUILayout.Button(t == null ? "All" : t.Name, m_SelectedType == t ? Styles.BoldButtonSelecetd : Styles.BoldButton))
         {
-            if (GUILayout.Button(t == null ? "All" : t.Name, m_SelectedType == t ? Styles.BoldButtonSelecetd : Styles.BoldButton))
-            {
-                m_SelectedType = t;
-                // Automatically select a device, if there was only one of them
-                var devices = GetDevices(t);
-                if (devices.Count == 1)
-                    SelectDevice(devices[0]);
-            }
+            m_SelectedTypeIdx++;
+            if (m_SelectedTypeIdx == m_DeviceTypes.Length)
+                m_SelectedTypeIdx = 0;
+            t = m_DeviceTypes[m_SelectedTypeIdx];
+
+            m_SelectedType = t;
+            // Automatically select a device, if there was only one of them
+            var devices = GetDevices(t);
+            if (devices.Count == 1)
+                SelectDevice(devices[0]);
         }
+
         GUILayout.EndHorizontal();
 
-
+    }
+    private void DoInfoWhenDeviceIsNotSelected()
+    { 
         if (m_ShowSettings)
         {
             DoSettings();
